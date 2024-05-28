@@ -11,22 +11,14 @@ from funciones import obtener_datos, calcular_edad
 import plotly.express as px
 from dotenv import load_dotenv
 import os
-from pathlib import Path
 
-base_dir = Path(__file__).resolve().parent.parent
-
-# Cargar variables de entorno
-load_dotenv(base_dir / '.env')
-
-# Obtener variables de entorno
-host = os.getenv('host')
-port = os.getenv('port')
-dbname = os.getenv('dbname')
-user = os.getenv('user')
-password = os.getenv('password')
+host = st.secrets["host"]
+port = st.secrets["port"]
+dbname = st.secrets["dbname"]
+user = st.secrets["user"]
+password = st.secrets["password"]
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 
 st.set_page_config(page_title="Descargas Play Store",
