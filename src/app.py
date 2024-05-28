@@ -9,6 +9,7 @@ import seaborn as sns
 import psycopg2
 from funciones import obtener_datos, calcular_edad
 import plotly.express as px
+import plotly.graph_objs as go
 from dotenv import load_dotenv
 import os
 
@@ -76,15 +77,15 @@ elif seleccion == "Intereses Alumnos":
             intereses = df_interesados['nombre_servicio'].value_counts()
             
             # Crear el gráfico de barras
-            plt.figure(figsize=(10, 6))
-            sns.barplot(x=intereses.index, y=intereses.values, palette='viridis')
-            plt.title('Servicios Más Contratados')
-            plt.xlabel('Servicio')
-            plt.ylabel('Número de Contrataciones')
-            plt.xticks(rotation=45)
-            plt.show()
+            fig = go.Figure(data=[go.Bar(x=intereses.index, y=intereses.values, marker_color=px.colors.qualitative.Plotly)])
 
-            st.pyplot(plt)
+
+            # Establecer diseño del gráfico
+            fig.update_layout(title='Servicios Más Contratados',
+                xaxis=dict(title='Servicio', tickangle=45),
+                yaxis=dict(title='Número de Contrataciones'))
+            # Mostrar el gráfico en Streamlit
+            st.plotly_chart(fig)
     
 
         except:
@@ -118,15 +119,16 @@ elif seleccion == "Histórico Interacciones":
         titulo = "Distribución de Interacciones de " + filtro_agente + ":"
     
     recuento = df["motivo"].value_counts()
-    plt.figure(figsize=(8, 8))
-    plt.pie(recuento, labels=recuento.index, autopct='%1.1f%%', startangle=140, colors=['#ff9999','#66b3ff','#99ff99'])
 
-    # Título del gráfico
-    plt.title(titulo)
+    fig = go.Figure(data=[go.Pie(labels=recuento.index, values=recuento, 
+                             textinfo='percent', 
+                             marker=dict(colors=['#ff9999','#66b3ff','#99ff99']))])
 
-    # Mostrar el gráfico
-    plt.show()
-    st.pyplot(plt)
+    # Establecer diseño del gráfico
+    fig.update_layout(title=titulo)
+
+    # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig)
 
 elif seleccion == "Distribución de los Alumnos por País":
     query = '''SELECT * FROM alumnos'''
@@ -226,15 +228,17 @@ elif seleccion == "Facturación":
             df = df[df["pais"]==selected_country]
         ingresos_por_servicio = df.groupby("nombre_servicio")["precio"].sum().sort_values(ascending=False)
 
-        plt.figure(figsize=(10, 6))
-        sns.barplot(x=ingresos_por_servicio.index, y=ingresos_por_servicio.values, palette='viridis')
-        plt.title('Servicios Más Contratados')
-        plt.xlabel('Servicios')
-        plt.ylabel('Ingresos')
-        plt.xticks(rotation=45)
-        plt.show()
+        fig = go.Figure(data=[go.Bar(x=ingresos_por_servicio.index, y=ingresos_por_servicio.values)])
 
-        st.pyplot(plt)
+        # Establecer diseño del gráfico
+        fig.update_layout(title='Servicios Más Contratados',
+                  xaxis=dict(title='Servicios', tickangle=25, title_standoff=50),
+                  yaxis=dict(title='Ingresos'),
+                  width=800,  # Ancho del gráfico
+                  height=600)  # Alto del gráfico
+
+        # Mostrar el gráfico en Streamlit
+        st.plotly_chart(fig)
 
 
         #Grafico de ingresos por agente
