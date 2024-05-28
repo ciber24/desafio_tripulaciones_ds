@@ -9,15 +9,11 @@ import seaborn as sns
 import psycopg2
 from funciones import obtener_datos, calcular_edad
 import plotly.express as px
+from config import host, port, dbname, user, password
 import os
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-host = "dpg-cp69sf821fec738eabeg-a.frankfurt-postgres.render.com"
-port = "5432"
-dbname = "beyond_db_jb95"
-user = "beyond_db_jb95_user"
-password = "BSQk9EFUr35BcRncy8h5ACGfld4KA11N"
 
 st.set_page_config(page_title="Descargas Play Store",
                    #page_icon="data/icono.png"
