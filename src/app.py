@@ -14,7 +14,7 @@ import os
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-load_dotenv()
+load_dotenv('.env')
 
 host = os.getenv('host')
 port = os.getenv('port')
@@ -176,9 +176,6 @@ elif seleccion == "Distribución de los Alumnos por País":
 
     # Mostrar el mapa
     st.plotly_chart(fig)
-
-    # Guardar el mapa como archivo HTML
-    fig.write_html('mapa_bubble_plot_alumnos_por_pais.html')
 
 
 elif seleccion == "Facturación":
