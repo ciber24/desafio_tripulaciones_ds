@@ -9,12 +9,18 @@ import seaborn as sns
 import psycopg2
 from funciones import obtener_datos, calcular_edad
 import plotly.express as px
-
+from dotenv import load_dotenv
 import os
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# 
-from config import host, port, dbname, user, password
+
+load_dotenv()
+
+host = os.getenv('host')
+port = os.getenv('port')
+dbname = os.getenv('dbname')
+user = os.getenv('user')
+password = os.getenv('password')
 
 st.set_page_config(page_title="Descargas Play Store",
                    #page_icon="data/icono.png"
