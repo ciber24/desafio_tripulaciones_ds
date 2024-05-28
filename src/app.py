@@ -31,7 +31,7 @@ seleccion = st.sidebar.selectbox("Seleccione menu", ["Home", "Intereses Alumnos"
 if seleccion == "Home":
     st.title("ESTO HAY QUE EDITARLO")
     
-    with st.expander("EDITAMOS"):
+    with st.expander(host):
         st.write("EDITAMOS ")
         st.write("EDITAMOS")
     img = Image.open("img/bye.png")
