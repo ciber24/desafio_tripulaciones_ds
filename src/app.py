@@ -14,11 +14,11 @@ import os
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-host = st.secrets["env"]["host"]
-port = st.secrets["env"]["port"]
-dbname = st.secrets["env"]["dbname"]
-user = st.secrets["env"]["user"]
-password = st.secrets["env"]["password"]
+host = st.secrets.env.host
+port = st.secrets.env.port
+dbname = st.secrets.env.dbname
+user = st.secrets.env.user
+password = st.secrets.env.password
 
 
 st.set_page_config(page_title="Descargas Play Store",
