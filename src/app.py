@@ -13,7 +13,7 @@ import plotly.express as px
 import os
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+# 
 from config import host, port, dbname, user, password
 
 st.set_page_config(page_title="Descargas Play Store",
