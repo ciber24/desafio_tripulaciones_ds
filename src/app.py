@@ -367,6 +367,12 @@ elif seleccion == "Facturación":
         # Mostrar el gráfico interactivo
         st.plotly_chart(fig)
 
+    if not evolucion_ventas and not servicios_más_vendidos and not ventas_agente and not ventas_pais_origen:
+        img_3 = Image.open("img/facturacion.png")
+        st.image(img_3, 
+                 width=570
+                 )
+
 elif seleccion == "Referencias":
 
     # referencias
