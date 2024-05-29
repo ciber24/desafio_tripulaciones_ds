@@ -5,6 +5,8 @@ import numpy as np
 import streamlit.components.v1 as c
 from datetime import datetime
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 import seaborn as sns
 import psycopg2
 from funciones import obtener_datos, calcular_edad
@@ -22,25 +24,26 @@ user = st.secrets["env"]["user"]
 password = st.secrets["env"]["password"]
 
 
-st.set_page_config(page_title="Descargas Play Store",
+st.set_page_config(page_title="Admin Dashboard",
                    #page_icon="data/icono.png"
                    )
 
+img = Image.open("img/bye.png")
+st.sidebar.image(img)
+sin_filtro = "Sin filtro"
+
 seleccion = st.sidebar.selectbox("Seleccione menu", ["Home", "Intereses Alumnos", "Histórico Interacciones", "Distribución de los Alumnos por País", "Facturación", "Referencias"])
-
 if seleccion == "Home":
-    st.title("ESTO HAY QUE EDITARLO")
-    
-    with st.expander(host):
-        st.write("EDITAMOS ")
-        st.write("EDITAMOS")
-    img = Image.open("img/bye.png")
+    #st.title("Panel de control")
+    img_2 = Image.open("img/intro.png")
+    st.image(img_2, 
+             width=570,
+             )
+    #    st.write("EDITAMOS ")
+    #    st.write("EDITAMOS")
 
-    st.image(img)
 
 elif seleccion == "Intereses Alumnos":
-
-    st.title("Intereses Alumnos:")
 
     query = '''SELECT "alumnos".nombre || ' ' || "alumnos".apellidos AS "nombre_completo",
                     "servicios_generales"."nombre_servicio",
@@ -56,46 +59,59 @@ elif seleccion == "Intereses Alumnos":
     df['edad'] = df['fecha_nacimiento'].apply(calcular_edad)
 
 
-    filtro_edad = st.sidebar.selectbox("Filtro edad", ["Sin filtro"] + sorted(list(df["edad"].unique())))
+    filtro_edad = st.sidebar.selectbox("Filtro edad", [sin_filtro] + sorted(list(df["edad"].unique())))
     
-    if filtro_edad != "Sin filtro":
+    if filtro_edad != sin_filtro:
         df = df[df["edad"]==filtro_edad]
 
-    filtro_pais = st.sidebar.selectbox("Filtro pais", ["Sin filtro"] + sorted(list(df["pais"].unique())))
+    filtro_pais = st.sidebar.selectbox("Filtro pais", [sin_filtro] + sorted(list(df["pais"].unique())))
 
-    if filtro_pais != "Sin filtro":
+    if filtro_pais != sin_filtro:
         df = df[df["pais"]==filtro_pais]
 
     if len(df)!=0:
 
         # Conexión a la base de datos
-        try:
                 
-            df_interesados = df[df['interesado'] == True]
+        df_interesados = df[df['interesado'] == True]
+        # Contar la cantidad de veces que cada servicio ha sido contratado
+        intereses = df_interesados['nombre_servicio'].value_counts()
+        
+        # Definir el número de barras
+        num_bars = len(intereses)
+        titulo = "Distribución del interés del cliente en los servicios ofertados:"
+        # Crear el gráfico de barras
+        fig = go.Figure(data=[go.Bar(x=intereses.index, y=intereses.values, marker_color=px.colors.qualitative.Plotly)])
+        base_color = '#A50085'
+        cmap = cm.get_cmap('Purples', num_bars + 6)
+        colors = [mcolors.to_hex(cmap(i)) for i in reversed(range(2,cmap.N))]
+        # Establecer diseño del gráfico
+        fig = go.Figure(data=[go.Bar(
+        x=intereses.index,
+        y=intereses.values,
+        marker=dict(color=colors),
+        text=intereses.values,
+        textposition='auto'
+        )])
+        
+        fig.update_layout(
+            title=titulo,
+            xaxis=dict(title='Servicios ofertados', tickangle=-20),
+            yaxis=dict(title='Cantidad de interesados'),
+            font=dict(family='Lato'),
+            title_font=dict(family="Lato", size=24, color="#002766"),
+            width=750,  # Ancho de la figura
+            height=470,  # Alto de la figura
+        )
+        # Mostrar el gráfico en Streamlit
+        st.plotly_chart(fig)
 
-            # Contar la cantidad de veces que cada servicio ha sido contratado
-            intereses = df_interesados['nombre_servicio'].value_counts()
-            
-            # Crear el gráfico de barras
-            fig = go.Figure(data=[go.Bar(x=intereses.index, y=intereses.values, marker_color=px.colors.qualitative.Plotly)])
 
-
-            # Establecer diseño del gráfico
-            fig.update_layout(title='Servicios Más Contratados',
-                xaxis=dict(title='Servicio', tickangle=45),
-                yaxis=dict(title='Número de Contrataciones'))
-            # Mostrar el gráfico en Streamlit
-            st.plotly_chart(fig)
-    
-
-        except:
-            st.write(" Error")
     else:
         st.write("No hay resultados")
 
 elif seleccion == "Histórico Interacciones":
 
-    st.title("Histórico Interacciones:")
     
     query = '''SELECT 
                 agentes.id_agente,
@@ -110,22 +126,37 @@ elif seleccion == "Histórico Interacciones":
 
     df = obtener_datos(host, port, dbname, user, password, query)
 
-    filtro_agente = st.sidebar.selectbox("Filtro Agentes", ["Sin filtro"] + sorted(list(df["agente"].unique())))
+    filtro_agente = st.sidebar.selectbox("Filtro Agentes", [sin_filtro] + sorted(list(df["agente"].unique())))
 
-    titulo = "Distribución de Interacciones General:"
+    titulo = "Distribución de Interacciones con los clientes:"
 
-    if filtro_agente != "Sin filtro":
+    if filtro_agente != sin_filtro:
         df = df[df["agente"]==filtro_agente]
         titulo = "Distribución de Interacciones de " + filtro_agente + ":"
     
+    
     recuento = df["motivo"].value_counts()
 
-    fig = go.Figure(data=[go.Pie(labels=recuento.index, values=recuento, 
-                             textinfo='percent', 
-                             marker=dict(colors=['#ff9999','#66b3ff','#99ff99']))])
+    category_color_map  = {
+        'Seguimiento' : '#5e3070', 
+        'Ofertas' : '#6f8779', 
+        'Incidencias' : '#ad0937'
+        }
+    
+    labels = recuento.index
+    values = recuento.values
+    colors = [category_color_map[label] for label in labels]
 
-    # Establecer diseño del gráfico
-    fig.update_layout(title=titulo)
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=0.4, marker=dict(colors=colors))])
+    
+    
+    fig.update_layout(
+        title=titulo, 
+        title_font=dict(family="Lato", size=24, color="#002766"),
+        legend_font=dict(family="Lato", size=14, color="#002766"),
+        width=800,  # Ancho del gráfico
+        height=570,  # Alto del gráfico
+        )
 
     # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig)
@@ -158,7 +189,7 @@ elif seleccion == "Distribución de los Alumnos por País":
         hover_name="pais",  # Nombre que se muestra al pasar el cursor
         color="recuento",        # Color de las burbujas basado en el número de alumnos
         projection="natural earth",
-        title="Número de Alumnos por País",
+        title="Distribución global del cliente:",
         color_continuous_scale=px.colors.sequential.Purples,  # Escala de color en morado
         color_continuous_midpoint=paises_df['recuento'].median(),  # Definir el punto medio de la escala de color
         range_color=[0.1, paises_df['recuento'].max()],  # Establecer el rango de la escala de color
@@ -171,8 +202,9 @@ elif seleccion == "Distribución de los Alumnos por País":
 
     # Ajustar el tamaño de la figura
     fig.update_layout(
-        width=1000,  # Ancho de la figura
+        width=900,  # Ancho de la figura
         height=600,  # Alto de la figura
+        title_font=dict(family="Lato", size=24, color="#002766")
     )
 
     # Mostrar el mapa
@@ -181,11 +213,11 @@ elif seleccion == "Distribución de los Alumnos por País":
 
 elif seleccion == "Facturación":
 
-    evolucion_ventas = st.sidebar.checkbox('Mostrar gráfico de evolución de ingresos')
+    evolucion_ventas = st.sidebar.checkbox('Mostrar gráfico de evolución de la facturación')
     if evolucion_ventas:
 
         meses = ["Sin filtrar"] + pd.date_range(start="2022-01-01", end="2023-12-31", freq='MS').strftime("%Y-%m").tolist()
-        selected_month = st.sidebar.selectbox("Seleccione un mes para visualizar ventas posteriores:", meses)
+        selected_month = st.sidebar.selectbox("Seleccione un mes para visualizar las ventas posteriores:", meses)
 
 
         query = '''SELECT * FROM facturas
@@ -196,17 +228,20 @@ elif seleccion == "Facturación":
         if selected_month != "Sin filtrar":
             df = df[df["fecha"]>selected_month] 
 
-        fig = px.line(df, x='fecha', y='precio', title='Evolución de Ingresos', labels={'fecha': 'Fecha', 'precio': 'Precio (€)'})
+        fig = px.line(df, x='fecha', y='precio', title='Evolución de la facturación:', labels={'fecha': 'Fecha', 'precio': 'Precio (€)'})
 
         fig.update_layout(
-        width=800,  # Ancho del gráfico
-        height=400  # Alto del gráfico
-        )
+            title_font=dict(family="Lato", size=24, color="#002766"),  # Fuente Lato para el título
+            xaxis=dict(title='Fecha', title_font=dict(family="Lato", size=16, color="#000000")),  # Fuente Lato para el eje X
+            yaxis=dict(title='Precio (€)', title_font=dict(family="Lato", size=16, color="#000000")),  # Fuente Lato para el eje Y
+            width=700,  # Ancho del gráfico
+            height=500  # Alto del gráfico
+                )
 
         # Mostrar el gráfico en Streamlit
         st.plotly_chart(fig)
     
-    servicios_más_vendidos = st.sidebar.checkbox('Mostrar gráfico servicios más vendidos')
+    servicios_más_vendidos = st.sidebar.checkbox('Mostrar gráfico servicios más contratados')
     if servicios_más_vendidos:
         query = '''SELECT
                     lineas_factura.precio,
@@ -227,22 +262,30 @@ elif seleccion == "Facturación":
         if selected_country != "Sin filtrar":
             df = df[df["pais"]==selected_country]
         ingresos_por_servicio = df.groupby("nombre_servicio")["precio"].sum().sort_values(ascending=False)
+        num_bars = len(ingresos_por_servicio)
 
-        fig = go.Figure(data=[go.Bar(x=ingresos_por_servicio.index, y=ingresos_por_servicio.values)])
+        # Generar colores degradados personalizados
+        base_color = '#A50085'
+        cmap = cm.get_cmap('Purples',num_bars + 6)
+        colors = [mcolors.to_hex(cmap(i / (num_bars + 2))) for i in reversed(range(2, num_bars + 2))]
+
+        fig = go.Figure(data=[go.Bar(x=ingresos_por_servicio.index, y=ingresos_por_servicio.values, marker=dict(color=colors[:num_bars]))])
+
 
         # Establecer diseño del gráfico
-        fig.update_layout(title='Servicios Más Contratados',
-                  xaxis=dict(title='Servicios', tickangle=25, title_standoff=50),
-                  yaxis=dict(title='Ingresos'),
-                  width=800,  # Ancho del gráfico
-                  height=600)  # Alto del gráfico
-
-        # Mostrar el gráfico en Streamlit
+        fig.update_layout(
+            title='Distribución de los servicios más contratados:',
+            title_font=dict(family="Lato", size=24, color="#002766"),  # Fuente Lato para el título
+            xaxis=dict(title='Servicios', tickangle=25, title_standoff=50, title_font=dict(family="Lato", size=16, color="#000000")),  # Fuente Lato para el eje X
+            yaxis=dict(title='Ingresos', title_font=dict(family="Lato", size=16, color="#000000")),  # Fuente Lato para el eje Y
+            width=800,  # Ancho del gráfico
+            height=570  # Alto del gráfico
+            )
         st.plotly_chart(fig)
 
 
         #Grafico de ingresos por agente
-    ventas_agente = st.sidebar.checkbox('Mostrar gráfico de ventas por agente')
+    ventas_agente = st.sidebar.checkbox('Mostrar gráfico de distribución de facturación por agente')
     if ventas_agente:
         query2 = '''SELECT 
         facturas.precio,
@@ -252,12 +295,36 @@ elif seleccion == "Facturación":
         df_facturas_agentes = obtener_datos(host,port,dbname,user,password,query2)
         facturas_por_agente = df_facturas_agentes.groupby('nombre_agente')['precio'].sum().sort_values(ascending=False).reset_index()
 
+        # Definir el número de barras
+        num_bars = len(facturas_por_agente)
+
+        # Generar colores degradados personalizados
+        base_color = '#A50085'
+        cmap = cm.get_cmap('Purples', num_bars + 3)
+        colors = [mcolors.to_hex(cmap(i)) for i in reversed(range(3, cmap.N))]
+
         # Crear el gráfico interactivo con Plotly
-        fig = px.bar(facturas_por_agente, x='nombre_agente', y='precio', title='Sumatorio de Facturas por Agente',
-                    labels={'nombre_agente': 'Agentes', 'precio': 'Ingresos'})
+        fig = go.Figure(data=[go.Bar(
+            x=facturas_por_agente['nombre_agente'],
+            y=facturas_por_agente['precio'],
+            marker=dict(color=colors[:num_bars]),  # Aplicar los colores generados
+            text=facturas_por_agente['precio'],
+            textposition='auto'
+        )])
+
+        fig.update_layout(
+            title='Distribución de facturación por agente:',
+            title_font=dict(family="Lato", size=24, color="#002766"),  # Fuente Lato para el título
+            xaxis=dict(title='Agentes', tickangle=45, title_font=dict(family="Lato", size=16, color="#000000")),  # Fuente Lato para el eje X
+            yaxis=dict(title='Ingresos', title_font=dict(family="Lato", size=16, color="#000000")),  # Fuente Lato para el eje Y
+            width=900,  # Ancho del gráfico
+            height=570  # Alto del gráfico
+            )
 
         # Mostrar el gráfico interactivo
         st.plotly_chart(fig)
+
+
     
 
     ventas_pais_origen = st.sidebar.checkbox('Mostrar gráfico de ventas por pais de origen:')
@@ -271,9 +338,31 @@ elif seleccion == "Facturación":
         df_facturas_alumnos = obtener_datos(host,port,dbname,user,password,query1)
         facturas_por_pais = df_facturas_alumnos.groupby('pais')['precio'].sum().sort_values(ascending=False).reset_index()
 
+        # Definir el número de barras
+        num_bars = len(facturas_por_pais)
+
+        # Generar colores degradados personalizados
+        base_color = '#A50085'
+        cmap = cm.get_cmap('Purples',num_bars + 6)
+        colors = [mcolors.to_hex(cmap(i / (num_bars + 2))) for i in reversed(range(2, num_bars + 2))]
+
         # Crear el gráfico interactivo con Plotly
-        fig = px.bar(facturas_por_pais, x='pais', y='precio', title='Sumatorio de Facturas por País de Origen del Alumno',
-                    labels={'pais': 'País', 'precio': 'Ingresos'})
+        fig = go.Figure(data=[go.Bar(
+            x=facturas_por_pais['pais'],
+            y=facturas_por_pais['precio'],
+            marker=dict(color=colors),
+            text=round(facturas_por_pais['precio'],2),
+            textposition='auto'
+            )])
+
+        fig.update_layout(
+            title='Distribución de facturación por país de origen del cliente:',
+            xaxis=dict(title='País', tickangle=45, title_font=dict(family="Lato", size=16, color="#002766")),
+            yaxis=dict(title='Ingresos (€)', title_font=dict(family="Lato", size=16, color="#002766")),
+            title_font=dict(family="Lato", size=24, color="#002766"),
+                        width=800,  # Ancho del gráfico
+            height=570  # Alto del gráfico
+                )
 
         # Mostrar el gráfico interactivo
         st.plotly_chart(fig)
@@ -291,17 +380,41 @@ elif seleccion == "Referencias":
 
     df_referencias = obtener_datos(host,port,dbname,user,password,query3)
 
-    paises = ["Sin filtrar"] + sorted(list(df_referencias["pais"].unique()))
+    paises = [sin_filtro] + sorted(list(df_referencias["pais"].unique()))
 
     selected_country = st.sidebar.selectbox("Seleccione un pais para ver las referencias por pais:", paises)
 
-    if selected_country != "Sin filtrar":
+    if selected_country != sin_filtro:
         df_referencias = df_referencias[df_referencias["pais"]==selected_country]
 
 
     referencias = df_referencias['descripcion'].value_counts()
-    # Crear el gráfico de pastel
-    fig = px.pie(referencias, values=referencias.values, names=referencias.index, title='¿A través qué plataformas nos conocen nuestros clientes?',
-                 hole=0.4)
 
+    ## Crear el gráfico de pastel
+    category_color_map = {
+        'Referencia (amigo, familiar, conocido)': '#E9D337',
+        'Página Web': '#554AED',
+        'Redes Sociales (Instagram, Facebook, Whatsapp, Newsletter, LinkedIn)': '#3BB9FF',
+        'Institución (colegio, universidad, otras)': '#002766'
+    }
+
+    # Crear los datos del gráfico de pastel
+    labels = referencias.index
+    values = referencias.values
+    colors = [category_color_map[label] for label in labels]
+
+    # Crear el gráfico de pastel
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=0.4, marker=dict(colors=colors))])
+
+    fig.update_layout(
+        title='¿A través de qué plataformas nos han conocido nuestros clientes?',
+        title_font=dict(family="Lato", size=24, color="#002766"),
+        legend_font=dict(family="Lato", size=14, color="#002766"),
+        width=800,  # Ancho del gráfico
+        height=570,  # Alto del gráfico
+    )
+
+    # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig)
+
+
